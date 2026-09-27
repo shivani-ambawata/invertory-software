@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accounting & Inventory Management Software</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f9; margin: 0; padding: 20px; }
+        .container { max-width: 950px; margin: auto; }
+        .card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h2 { margin-top: 0; color: #333; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+        input, select { width: 100%; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        button { background: #28a745; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #218838; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #007bff; color: white; }
+        #mainDashboard { display: none; }
+        #invoiceSection, #ledgerStatementSection, #financialReportSection { display: none; background: #fff; padding: 20px; border: 2px dashed #007bff; margin-top: 20px; }
+        @media print {
+            body * { visibility: hidden; }
+            #invoiceSection, #invoiceSection *, #ledgerStatementSection, #ledgerStatementSection *, #financialReportSection, #financialReportSection * { visibility: visible; }
+            #invoiceSection, #ledgerStatementSection, #financialReportSection { position: absolute; left: 0; top: 0; width: 100%; border: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Login Card -->
+    <div class="card" id="loginCard" style="max-width: 400px; margin: 50px auto;">
+        <h2 style="text-align: center; color: #007bff;">Software Login</h2>
+        <form id="loginForm">
+            <div class="form-group">
+                <label>Username:</label>
+                <input type="text" id="loginUser" required placeholder="admin">
+            </div>
+            <div class="form-group">
+                <label>Password:</label>
+                <input type="password" id="loginPass" required placeholder="123">
+            </div>
+            <button type="submit" style="width: 100%;">Login</button>
+        </form>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="mainDashboard">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2>Business Dashboard & Accounting</h2>
+            <button type="button" onclick="location.reload()" style="background: #dc3545; padding: 5px 10px; font-size: 14px;">Logout</button>
+        </div>
+
+        <!-- Financial Summary Widget & Reports Button -->
+        <div class="card" style="background: #e9ecef;">
+            <h2>Financial Summary & Balance Sheet Overview</h2>
+            <p><strong>Total Sales Revenue:</strong> ₹<span id="repSales">0</span></p>
+            <p><strong>Total Expenses:</strong> ₹<span id="repExpenses">0</span></p>
+            <p><strong>Net Profit:</strong> ₹<span id="repProfit">0</span></p>
+            <p><strong>Closing Stock Asset Value:</strong> ₹<span id="repStockVal">0</span></p>
+            <p><strong>Total Debtors (Amount to Receive):</strong> ₹<span id="repDebtors">0</span></p>
+            <p><strong>Total Creditors (Amount to Pay):</strong> ₹<span id="repCreditors">0</span></p>
+            <button type="button" id="viewFinancialReportBtn" style="background: #28a745; margin-top: 15px;">📊 View Profit & Loss / Balance Sheet Report</button>
+        </div>
+
+        <!-- Add Party Section -->
+        <div class="card">
+            <h2>Add Party (Debtor / Creditor Khata)</h2>
+            <form id="partyForm">
+                <div class="form-group">
+                    <label>Party Name:</label>
+                    <input type="text" id="partyName" required placeholder="Ramesh Kumar">
+                </div>
+                <div class="form-group">
+                    <label>Party Type:</label>
+                    <select id="partyType">
+                        <option value="Debtor">Debtor (Customer - Paise Lene Hain)</option>
+                        <option value="Creditor">Creditor (Supplier - Paise Dene Hain)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Phone Number:</label>
+                    <input type="text" id="partyPhone" placeholder="Mobile Number">
+                </div>
+                <div class="form-group">
+                    <label>Opening Balance Amount (₹):</label>
+                    <input type="number" step="0.01" id="partyBalance" value="0">
+                </div>
+                <button type="submit" style="background: #17a2b8;">Save Party Ledger</button>
+            </form>
+        </div>
+
+        <!-- Payment / Receipt Voucher Entry Section -->
+        <div class="card" style="border: 2px solid #ffc107;">
+            <h2>Payment / Receipt Voucher</h2>
+            <form id="transactionForm">
+                <div class="form-group">
+                    <label>Select Party:</label>
+                    <select id="transPartySelect">
+                        <option value="">-- Select Party --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Voucher Type:</label>
+                    <select id="transType">
+                        <option value="Receipt">Receipt (Paisa Mila)</option>
+                        <option value="Payment">Payment (Paisa Diya)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Amount (₹):</label>
+                    <input type="number" step="0.01" id="transAmount" required placeholder="Amount">
+                </div>
+                <button type="submit" style="background: #ffc107; color: black;">Save Voucher Entry</button>
+            </form>
+        </div>
+
+        <!-- Party Ledger Statement Viewer -->
+        <div class="card" style="border: 2px solid #6f42c1;">
+            <h2 style="color: #6f42c1;">View Party Ledger Statement (Khata Statement)</h2>
+            <div class="form-group">
+                <label>Select Party to View Statement:</label>
+                <select id="statementPartySelect">
+                    <option value="">-- Select Party --</option>
+                </select>
+            </div>
+            <button type="button" id="viewStatementBtn" style="background: #6f42c1;">View Khata Statement</button>
+        </div>
+
+        <!-- Add Expense Section -->
+        <div class="card">
+            <h2>Add Expense Entry</h2>
+            <form id="expenseForm">
+                <div class="form-group">
+                    <label>Expense Title:</label>
+                    <input type="text" id="expTitle" required placeholder="Electricity Bill, Transport">
+                </div>
+                <div class="form-group">
+                    <label>Amount (₹):</label>
+                    <input type="number" step="0.01" id="expAmount" required placeholder="500">
+                </div>
+                <div class="form-group">
+                    <label>Category:</label>
+                    <input type="text" id="expCategory" required placeholder="Office / Utility">
+                </div>
+                <button type="submit" style="background: #6c757d;">Save Expense</button>
+            </form>
+        </div>
+
+        <!-- Add Inventory Item Section -->
+        <div class="card">
+            <h2>Add Inventory Item</h2>
+            <form id="inventoryForm">
+                <div class="form-group">
+                    <label>Item Name:</label>
+                    <input type="text" id="itemName" required placeholder="Urea Fertilizer">
+                </div>
+                <div class="form-group">
+                    <label>Category:</label>
+                    <input type="text" id="category" required placeholder="Fertiliser">
+                </div>
+                <div class="form-group">
+                    <label>Quantity:</label>
+                    <input type="number" id="quantity" required placeholder="100">
+                </div>
+                <div class="form-group">
+                    <label>Purchase Rate (₹):</label>
+                    <input type="number" step="0.01" id="purchaseRate" required placeholder="500">
+                </div>
+                <div class="form-group">
+                    <label>Sale Rate (₹):</label>
+                    <input type="number" step="0.01" id="saleRate" required placeholder="600">
+                </div>
+                <div class="form-group">
+                    <label>GST Rate (%):</label>
+                    <input type="number" step="0.01" id="gstRate" value="5">
+                </div>
+                <button type="submit">Save Item</button>
+            </form>
+        </div>
+
+        <!-- Sales Billing / Invoice Section -->
+        <div class="card">
+            <h2>Sales Billing / Invoice (with GST)</h2>
+            <div class="form-group">
+                <label>Customer Name:</label>
+                <input type="text" id="customerName" placeholder="Customer name">
+            </div>
+            <div class="form-group">
+                <label>Select Item from Stock:</label>
+                <select id="billItemSelect">
+                    <option value="">-- Loading items --</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Quantity to Sell:</label>
+                <input type="number" id="billQuantity" placeholder="Quantity">
+            </div>
+            <button type="button" id="generateBillBtn" style="background: #007bff;">Generate Bill & Calculate GST</button>
+        </div>
+
+        <!-- Sales Return & Purchase Return Section -->
+        <div class="card" style="border: 2px solid #dc3545;">
+            <h2>Sales Return & Purchase Return (Debit/Credit Notes)</h2>
+            <div style="display: flex; gap: 20px;">
+                <div style="flex: 1; background: #fff5f5; padding: 15px; border-radius: 6px;">
+                    <h3 style="color: #dc3545; margin-top: 0;">Sales Return</h3>
+                    <form id="salesReturnForm">
+                        <div class="form-group">
+                            <label>Customer Name:</label>
+                            <input type="text" id="srCustomer" required placeholder="Customer Name">
+                        </div>
+                        <div class="form-group">
+                            <label>Select Item:</label>
+                            <select id="srItemSelect" required><option value="">-- Select Item --</option></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Return Quantity:</label>
+                            <input type="number" id="srQty" required placeholder="Qty">
+                        </div>
+                        <button type="submit" style="background: #dc3545; width: 100%;">Process Sales Return</button>
+                    </form>
+                </div>
+                <div style="flex: 1; background: #fff8e1; padding: 15px; border-radius: 6px;">
+                    <h3 style="color: #d39e00; margin-top: 0;">Purchase Return</h3>
+                    <form id="purchaseReturnForm">
+                        <div class="form-group">
+                            <label>Supplier Name:</label>
+                            <input type="text" id="prSupplier" required placeholder="Supplier Name">
+                        </div>
+                        <div class="form-group">
+                            <label>Select Item:</label>
+                            <select id="prItemSelect" required><option value="">-- Select Item --</option></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Return Quantity:</label>
+                            <input type="number" id="prQty" required placeholder="Qty">
+                        </div>
+                        <button type="submit" style="background: #ffc107; color: black; width: 100%;">Process Purchase Return</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Printable Invoice Section -->
+        <div id="invoiceSection" class="card">
+            <h2 style="text-align: center; color: #007bff;">TAX INVOICE</h2>
+            <p><strong>Customer Name:</strong> <span id="invCustomer"></span></p>
+            <p><strong>Date:</strong> <span id="invDate"></span></p>
+            <table>
+                <thead>
+                    <tr><th>Item Name</th><th>Qty</th><th>Rate</th><th>Subtotal</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td id="invItemName"></td><td id="invQty"></td><td id="invRate"></td><td id="invSubtotal"></td></tr>
+                </tbody>
+            </table>
+            <h3 style="text-align: right; margin-top: 15px;">
+                GST Tax (<span id="invGstRate"></span>%): ₹<span id="invTaxAmount"></span><br>
+                Grand Total: ₹<span id="invTotal"></span>
+            </h3>
+            <button type="button" onclick="window.print()" style="background: #17a2b8; margin-top: 10px;">🖨️ Print / Save as PDF</button>
+        </div>
+
+        <!-- Printable Ledger Statement Section -->
+        <div id="ledgerStatementSection" class="card">
+            <h2 style="text-align: center; color: #6f42c1;">PARTY LEDGER STATEMENT (KHATA)</h2>
+            <p><strong>Party Name:</strong> <span id="stmtPartyName"></span> | <strong>Type:</strong> <span id="stmtPartyType"></span></p>
+            <p><strong>Phone:</strong> <span id="stmtPartyPhone"></span> | <strong>Current Balance Due:</strong> ₹<span id="stmtPartyBalance"></span></p>
+            <table>
+                <thead>
+                    <tr><th>Date</th><th>Voucher Type</th><th>Particulars</th><th>Amount (₹)</th></tr>
+                </thead>
+                <tbody id="stmtTableBody"></tbody>
+            </table>
+            <button type="button" onclick="window.print()" style="background: #6f42c1; margin-top: 10px;">🖨️ Print Statement</button>
+        </div>
+
+        <!-- Printable Financial Report Section (P&L & Balance Sheet) -->
+        <div id="financialReportSection" class="card">
+            <h2 style="text-align: center; color: #28a745;">PROFIT & LOSS STATEMENT AND BALANCE SHEET</h2>
+            <p><strong>Report Date:</strong> <span id="reportDate"></span></p>
+            
+            <h3 style="color: #007bff; border-bottom: 2px solid #007bff; padding-bottom: 5px;">1. Profit & Loss Statement</h3>
+            <p><strong>Total Sales Revenue:</strong> ₹<span id="frSales">0</span></p>
+            <p><strong>Total Expenses:</strong></p>
+            <ul id="frExpenseList"></ul>
+            <p><strong>Total Expense Amount:</strong> ₹<span id="frTotalExp">0</span></p>
+            <h3 style="color: #28a745;">Net Profit: ₹<span id="frNetProfit">0</span></h3>
+
+            <h3 style="color: #007bff; border-bottom: 2px solid #007bff; padding-bottom: 5px; margin-top: 25px;">2. Balance Sheet Overview</h3>
+            <p><strong>Assets (Closing Stock Value):</strong> ₹<span id="frStockVal">0</span></p>
+            <p><strong>Assets (Total Debtors / Receivables):</strong> ₹<span id="frDebtors">0</span></p>
+            <p><strong>Liabilities (Total Creditors / Payables):</strong> ₹<span id="frCreditors">0</span></p>
+            
+            <button type="button" onclick="window.print()" style="background: #28a745; margin-top: 15px;">🖨️ Print Financial Statement</button>
+        </div>
+
+        <!-- Day Book Transactions Table -->
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2>Day Book (All Transactions Log)</h2>
+                <button type="button" onclick="window.location.href='/api/export/daybook'" style="background: #17a2b8; padding: 6px 12px; font-size: 14px;">📥 Download DayBook Excel</button>
+            </div>
+            <table>
+                <thead>
+                    <tr><th>Date</th><th>Voucher Type</th><th>Particulars / Details</th><th>Amount (₹)</th></tr>
+                </thead>
+                <tbody id="daybookTableBody"></tbody>
+            </table>
+        </div>
+
+        <!-- Parties Ledger Table -->
+        <div class="card">
+            <h2>Debtors & Creditors Ledger</h2>
+            <table>
+                <thead>
+                    <tr><th>Party Name</th><th>Type</th><th>Phone</th><th>Balance (₹)</th></tr>
+                </thead>
+                <tbody id="partyTableBody"></tbody>
+            </table>
+        </div>
+
+        <!-- Current Inventory Stock Table -->
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2>Current Inventory Stock</h2>
+                <button type="button" onclick="window.location.href='/api/export/inventory'" style="background: #17a2b8; padding: 6px 12px; font-size: 14px;">📥 Download Stock Excel</button>
+            </div>
+            <table>
+                <thead>
+                    <tr><th>Item Name</th><th>Category</th><th>Qty</th><th>Purchase (₹)</th><th>Sale (₹)</th><th>GST (%)</th></tr>
+                </thead>
+                <tbody id="inventoryTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('loginUser').value;
+        const password = document.getElementById('loginPass').value;
+
+        const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        const result = await response.json();
+        if (response.ok) {
+            document.getElementById('loginCard').style.display = 'none';
+            document.getElementById('mainDashboard').style.display = 'block';
+            loadData();
+        } else {
+            alert(result.error);
+        }
+    });
+
+    async function loadData() {
+        loadInventory();
+        loadParties();
+        loadReports();
+        loadDayBook();
+    }
+
+    async function loadReports() {
+        const res = await fetch('/api/reports');
+        const data = await res.json();
+        document.getElementById('repSales').innerText = data.totalSales;
+        document.getElementById('repExpenses').innerText = data.totalExpenses;
+        document.getElementById('repProfit').innerText = data.netProfit;
+        document.getElementById('repStockVal').innerText = data.totalStockValue;
+        document.getElementById('repDebtors').innerText = data.totalDebtors;
+        document.getElementById('repCreditors').innerText = data.totalCreditors;
+    }
+
+    async function loadInventory() {
+        const response = await fetch('/api/items');
+        const data = await response.json();
+        const tbody = document.getElementById('inventoryTableBody');
+        const select = document.getElementById('billItemSelect');
+        const srSelect = document.getElementById('srItemSelect');
+        const prSelect = document.getElementById('prItemSelect');
+
+        tbody.innerHTML = '';
+        select.innerHTML = '<option value="">-- Select an item --</option>';
+        srSelect.innerHTML = '<option value="">-- Select Item --</option>';
+        prSelect.innerHTML = '<option value="">-- Select Item --</option>';
+
+        if (data.items) {
+            data.items.forEach(item => {
+                tbody.innerHTML += `
+                    <tr><td>${item.item_name}</td><td>${item.category}</td><td>${item.quantity}</td>
+                    <td>₹${item.purchase_rate}</td><td>₹${item.sale_rate}</td><td>${item.gst_rate}%</td></tr>
+                `;
+                select.innerHTML += `<option value="${item.id}" data-rate="${item.sale_rate}" data-gst="${item.gst_rate}">${item.item_name} (Stock: ${item.quantity} | Rate: ₹${item.sale_rate})</option>`;
+                srSelect.innerHTML += `<option value="${item.id}">${item.item_name} (Stock: ${item.quantity})</option>`;
+                prSelect.innerHTML += `<option value="${item.id}">${item.item_name} (Stock: ${item.quantity})</option>`;
+            });
+        }
+    }
+
+    async function loadParties() {
+        const response = await fetch('/api/parties');
+        const data = await response.json();
+        const tbody = document.getElementById('partyTableBody');
+        const select = document.getElementById('transPartySelect');
+        const stmtSelect = document.getElementById('statementPartySelect');
+
+        tbody.innerHTML = '';
+        select.innerHTML = '<option value="">-- Select Party --</option>';
+        stmtSelect.innerHTML = '<option value="">-- Select Party --</option>';
+
+        if (data.parties) {
+            data.parties.forEach(party => {
+                tbody.innerHTML += `
+                    <tr><td>${party.party_name}</td><td><b>${party.party_type}</b></td><td>${party.phone || '-'}</td><td>₹${party.balance_amount}</td></tr>
+                `;
+                select.innerHTML += `<option value="${party.id}">${party.party_name} (${party.party_type} - Bal: ₹${party.balance_amount})</option>`;
+                stmtSelect.innerHTML += `<option value="${party.id}">${party.party_name} (${party.party_type})</option>`;
+            });
+        }
+    }
+
+    async function loadDayBook() {
+        const response = await fetch('/api/daybook');
+        const data = await response.json();
+        const tbody = document.getElementById('daybookTableBody');
+        tbody.innerHTML = '';
+
+        if (data.daybook) {
+            data.daybook.forEach(row => {
+                tbody.innerHTML += `<tr><td>${row.date}</td><td><b>${row.voucher_type}</b></td><td>${row.particulars}</td><td>₹${row.amount}</td></tr>`;
+            });
+        }
+    }
+
+    document.getElementById('viewFinancialReportBtn').addEventListener('click', async () => {
+        const res = await fetch('/api/reports');
+        const data = await res.json();
+        if (res.ok) {
+            document.getElementById('reportDate').innerText = new Date().toLocaleDateString();
+            document.getElementById('frSales').innerText = data.totalSales;
+            document.getElementById('frTotalExp').innerText = data.totalExpenses;
+            document.getElementById('frNetProfit').innerText = data.netProfit;
+            document.getElementById('frStockVal').innerText = data.totalStockValue;
+            document.getElementById('frDebtors').innerText = data.totalDebtors;
+            document.getElementById('frCreditors').innerText = data.totalCreditors;
+
+            const expList = document.getElementById('frExpenseList');
+            expList.innerHTML = '';
+            if (data.expenses && data.expenses.length > 0) {
+                data.expenses.forEach(exp => {
+                    expList.innerHTML += `<li>${exp.title} (${exp.category}): ₹${exp.amount} [${exp.date}]</li>`;
+                });
+            } else {
+                expList.innerHTML = `<li>No expenses recorded yet.</li>`;
+            }
+
+            document.getElementById('financialReportSection').style.display = 'block';
+        } else {
+            alert('Error loading financial reports');
+        }
+    });
+
+    document.getElementById('viewStatementBtn').addEventListener('click', async () => {
+        const partyId = document.getElementById('statementPartySelect').value;
+        if (!partyId) {
+            alert('Please select a party first!');
+            return;
+        }
+
+        const res = await fetch(`/api/party-statement/${partyId}`);
+        const data = await res.json();
+        if (res.ok) {
+            document.getElementById('stmtPartyName').innerText = data.party.party_name;
+            document.getElementById('stmtPartyType').innerText = data.party.party_type;
+            document.getElementById('stmtPartyPhone').innerText = data.party.phone || '-';
+            document.getElementById('stmtPartyBalance').innerText = data.party.balance_amount;
+
+            const tbody = document.getElementById('stmtTableBody');
+            tbody.innerHTML = '';
+            if (data.transactions && data.transactions.length > 0) {
+                data.transactions.forEach(tx => {
+                    tbody.innerHTML += `<tr><td>${tx.date}</td><td><b>${tx.voucher_type}</b></td><td>${tx.particulars}</td><td>₹${tx.amount}</td></tr>`;
+                });
+            } else {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center;">No transactions found for this party.</td></tr>`;
+            }
+
+            document.getElementById('ledgerStatementSection').style.display = 'block';
+        } else {
+            alert('Error loading statement');
+        }
+    });
+
+    document.getElementById('partyForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+            party_name: document.getElementById('partyName').value,
+            party_type: document.getElementById('partyType').value,
+            phone: document.getElementById('partyPhone').value,
+            balance_amount: parseFloat(document.getElementById('partyBalance').value) || 0
+        };
+        const res = await fetch('/api/parties', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+            alert('Party added successfully!');
+            document.getElementById('partyForm').reset();
+            loadData();
+        }
+    });
+
+    document.getElementById('transactionForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+            party_id: parseInt(document.getElementById('transPartySelect').value),
+            type: document.getElementById('transType').value,
+            amount: parseFloat(document.getElementById('transAmount').value)
+        };
+        const res = await fetch('/api/transaction', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+            alert('Voucher recorded successfully!');
+            document.getElementById('transactionForm').reset();
+            loadData();
+        }
+    });
+
+    document.getElementById('salesReturnForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+            customer_name: document.getElementById('srCustomer').value,
+            item_id: parseInt(document.getElementById('srItemSelect').value),
+            quantity: parseInt(document.getElementById('srQty').value)
+        };
+        const res = await fetch('/api/sales-return', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+        if (res.ok) {
+            alert(result.message);
+            document.getElementById('salesReturnForm').reset();
+            loadData();
+        } else {
+            alert('Error: ' + result.error);
+        }
+    });
+
+    document.getElementById('purchaseReturnForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+            supplier_name: document.getElementById('prSupplier').value,
+            item_id: parseInt(document.getElementById('prItemSelect').value),
+            quantity: parseInt(document.getElementById('prQty').value)
+        };
+        const res = await fetch('/api/purchase-return', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+        if (res.ok) {
+            alert(result.message);
+            document.getElementById('purchaseReturnForm').reset();
+            loadData();
+        } else {
+            alert('Error: ' + result.error);
+        }
+    });
+
+    document.getElementById('expenseForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+            title: document.getElementById('expTitle').value,
+            amount: parseFloat(document.getElementById('expAmount').value),
+            category: document.getElementById('expCategory').value
+        };
+        const res = await fetch('/api/expenses', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+            alert('Expense added successfully!');
+            document.getElementById('expenseForm').reset();
+            loadData();
+        }
+    });
+
+    document.getElementById('inventoryForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const payload = {
+            item_name: document.getElementById('itemName').value,
+            category: document.getElementById('category').value,
+            quantity: parseInt(document.getElementById('quantity').value),
+            purchase_rate: parseFloat(document.getElementById('purchaseRate').value),
+            sale_rate: parseFloat(document.getElementById('saleRate').value),
+            gst_rate: parseFloat(document.getElementById('gstRate').value)
+        };
+        const response = await fetch('/api/items', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (response.ok) {
+            alert('Item added successfully!');
+            document.getElementById('inventoryForm').reset();
+            loadData();
+        }
+    });
+
+    document.getElementById('generateBillBtn').addEventListener('click', async () => {
+        const customerName = document.getElementById('customerName').value;
+        const selectElem = document.getElementById('billItemSelect');
+        const itemId = selectElem.value;
+        const quantity = document.getElementById('billQuantity').value;
+
+        if (!customerName || !itemId || !quantity) {
+            alert('Please fill all billing fields!');
+            return;
+        }
+
+        const selectedOption = selectElem.options[selectElem.selectedIndex];
+        const saleRate = parseFloat(selectedOption.getAttribute('data-rate'));
+
+        const payload = { customer_name: customerName, item_id: parseInt(itemId), quantity: parseInt(quantity) };
+        const response = await fetch('/api/bills', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        if (response.ok) {
+            document.getElementById('invCustomer').innerText = result.customer_name;
+            document.getElementById('invDate').innerText = new Date().toLocaleDateString();
+            document.getElementById('invItemName').innerText = result.itemName;
+            document.getElementById('invQty').innerText = result.quantity;
+            document.getElementById('invRate').innerText = '₹' + saleRate;
+            document.getElementById('invSubtotal').innerText = '₹' + result.subtotal;
+            document.getElementById('invGstRate').innerText = result.gstRate;
+            document.getElementById('invTaxAmount').innerText = result.taxAmount;
+            document.getElementById('invTotal').innerText = result.total_amount;
+
+            document.getElementById('invoiceSection').style.display = 'block';
+            document.getElementById('customerName').value = '';
+            document.getElementById('billQuantity').value = '';
+            loadData();
+            alert('Bill generated successfully!');
+        } else {
+            alert('Error: ' + result.error);
+        }
+    });
+</script>
+
+</body>
+</html>
